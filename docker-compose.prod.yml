@@ -1,0 +1,32 @@
+services:
+  mcp-server:
+    build: .
+    env_file: .env
+    expose:
+      - "8000"
+    networks:
+      - dokploy-network
+    depends_on:
+      jackett:
+        condition: service_healthy
+
+  jackett:
+    image: linuxserver/jackett:latest
+    volumes:
+      - jackett-config:/config
+    expose:
+      - "9117"
+    networks:
+      - dokploy-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9117"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+
+volumes:
+  jackett-config:
+
+networks:
+  dokploy-network:
+    external: true

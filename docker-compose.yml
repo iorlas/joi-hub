@@ -1,0 +1,24 @@
+services:
+  mcp-server:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      jackett:
+        condition: service_healthy
+
+  jackett:
+    image: linuxserver/jackett:latest
+    volumes:
+      - jackett-config:/config
+    ports:
+      - "9117:9117"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9117"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+
+volumes:
+  jackett-config:
