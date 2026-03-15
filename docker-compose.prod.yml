@@ -7,6 +7,8 @@ x-shared: &shared
   image: ghcr.io/iorlas/mcps:${IMAGE_TAG}
   expose:
     - "8000"
+  volumes:
+    - oauth-state:/root/.local/share/fastmcp
   networks:
     - dokploy-network
   restart: unless-stopped
@@ -107,6 +109,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  oauth-state:
   jackett-config:
 
 networks:
