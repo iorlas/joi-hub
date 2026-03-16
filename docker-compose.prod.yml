@@ -1,92 +1,76 @@
-x-shared-env: &shared-env
-  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-  ALLOWED_EMAILS: ${ALLOWED_EMAILS}
-
-x-shared: &shared
-  image: ghcr.io/iorlas/mcps:${IMAGE_TAG}
+x-reelm: &reelm
+  image: ghcr.io/iorlas/reelm:${IMAGE_TAG}
   expose:
     - "8000"
-  volumes:
-    - oauth-state:/root/.local/share/fastmcp
   networks:
     - dokploy-network
   restart: unless-stopped
   healthcheck:
-    test: ["CMD-SHELL", "curl -sf -o /dev/null -w '%{http_code}' http://localhost:8000/ | grep -qE '200|401'"]
+    test: ["CMD-SHELL", "curl -sf -o /dev/null -w '%{http_code}' http://localhost:8000/ | grep -qE '200|404'"]
     interval: 10s
     timeout: 5s
     retries: 3
     start_period: 10s
 
 services:
-  mcps-jackett:
-    <<: *shared
-    command: ["sh", "-c", "uv run uvicorn mcps.server:jackett --host 0.0.0.0 --port 8000"]
+  # ── Gateway (public, handles auth + federation) ──
+  gateway:
+    image: cr.agentgateway.dev/agentgateway:0.11.1
+    ports:
+      - "3000"
+    volumes:
+      - ./gateway/config.yaml:/config.yaml:ro
     environment:
-      <<: *shared-env
-      AUTH_ISSUER: https://mcps-jackett.shen.iorlas.net
-      JACKETT_URL: http://jackett:9117
-      JACKETT_API_KEY: ${JACKETT_API_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+    command: ["-f", "/config.yaml"]
+    networks:
+      - dokploy-network
+    restart: unless-stopped
     depends_on:
-      jackett:
+      reelm-transmission:
+        condition: service_healthy
+      reelm-jackett:
+        condition: service_healthy
+      reelm-storage:
         condition: service_healthy
     labels:
       traefik.enable: "true"
-      traefik.http.routers.mcps-jackett.rule: Host(`mcps-jackett.shen.iorlas.net`)
-      traefik.http.routers.mcps-jackett.entrypoints: websecure
-      traefik.http.routers.mcps-jackett.tls.certresolver: letsencrypt
-      traefik.http.services.mcps-jackett.loadbalancer.server.port: "8000"
+      traefik.http.routers.reelm.rule: Host(`reelm.shen.iorlas.net`)
+      traefik.http.routers.reelm.entrypoints: websecure
+      traefik.http.routers.reelm.tls.certresolver: letsencrypt
+      traefik.http.services.reelm.loadbalancer.server.port: "3000"
 
-  mcps-transmission:
-    <<: *shared
+  # ── Reelm MCP servers (internal, no auth) ──
+  reelm-transmission:
+    <<: *reelm
     command: ["sh", "-c", "uv run uvicorn mcps.server:transmission --host 0.0.0.0 --port 8000"]
     environment:
-      <<: *shared-env
-      AUTH_ISSUER: https://mcps-transmission.shen.iorlas.net
       TRANSMISSION_HOST: torrents.segaa.keenetic.link
       TRANSMISSION_PORT: "443"
       TRANSMISSION_PATH: /transmission/rpc
       TRANSMISSION_USER: ${TRANSMISSION_USER}
       TRANSMISSION_PASS: ${TRANSMISSION_PASS}
       TRANSMISSION_SSL: "true"
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.mcps-transmission.rule: Host(`mcps-transmission.shen.iorlas.net`)
-      traefik.http.routers.mcps-transmission.entrypoints: websecure
-      traefik.http.routers.mcps-transmission.tls.certresolver: letsencrypt
-      traefik.http.services.mcps-transmission.loadbalancer.server.port: "8000"
 
-  mcps-tmdb:
-    <<: *shared
-    command: ["sh", "-c", "uv run uvicorn mcps.server:tmdb --host 0.0.0.0 --port 8000"]
+  reelm-jackett:
+    <<: *reelm
+    command: ["sh", "-c", "uv run uvicorn mcps.server:jackett --host 0.0.0.0 --port 8000"]
     environment:
-      <<: *shared-env
-      AUTH_ISSUER: https://mcps-tmdb.shen.iorlas.net
-      TMDB_API_KEY: ${TMDB_API_KEY}
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.mcps-tmdb.rule: Host(`mcps-tmdb.shen.iorlas.net`)
-      traefik.http.routers.mcps-tmdb.entrypoints: websecure
-      traefik.http.routers.mcps-tmdb.tls.certresolver: letsencrypt
-      traefik.http.services.mcps-tmdb.loadbalancer.server.port: "8000"
+      JACKETT_URL: http://jackett:9117
+      JACKETT_API_KEY: ${JACKETT_API_KEY}
+    depends_on:
+      jackett:
+        condition: service_healthy
 
-  mcps-storage:
-    <<: *shared
+  reelm-storage:
+    <<: *reelm
     command: ["sh", "-c", "uv run uvicorn mcps.server:storage --host 0.0.0.0 --port 8000"]
     environment:
-      <<: *shared-env
-      AUTH_ISSUER: https://mcps-storage.shen.iorlas.net
       WEBDAV_URL: ${WEBDAV_URL}
       WEBDAV_USER: ${WEBDAV_USER}
       WEBDAV_PASS: ${WEBDAV_PASS}
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.mcps-storage.rule: Host(`mcps-storage.shen.iorlas.net`)
-      traefik.http.routers.mcps-storage.entrypoints: websecure
-      traefik.http.routers.mcps-storage.tls.certresolver: letsencrypt
-      traefik.http.services.mcps-storage.loadbalancer.server.port: "8000"
 
+  # ── Jackett (torrent indexer) ──
   jackett:
     image: linuxserver/jackett:latest
     volumes:
@@ -103,13 +87,12 @@ services:
     labels:
       tailscale: "true"
       traefik.enable: "true"
-      traefik.http.routers.mcps-jackett-admin.rule: Host(`jackett.ts.shen.iorlas.net`)
-      traefik.http.routers.mcps-jackett-admin.entrypoints: web
-      traefik.http.services.mcps-jackett-admin.loadbalancer.server.port: "9117"
+      traefik.http.routers.reelm-jackett-admin.rule: Host(`jackett.ts.shen.iorlas.net`)
+      traefik.http.routers.reelm-jackett-admin.entrypoints: web
+      traefik.http.services.reelm-jackett-admin.loadbalancer.server.port: "9117"
     restart: unless-stopped
 
 volumes:
-  oauth-state:
   jackett-config:
 
 networks:

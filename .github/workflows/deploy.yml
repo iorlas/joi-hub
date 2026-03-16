@@ -73,7 +73,6 @@ jobs:
           DOKPLOY_AUTH_TOKEN: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
           DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           JACKETT_API_KEY: ${{ secrets.JACKETT_API_KEY }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           TRANSMISSION_USER: ${{ secrets.TRANSMISSION_USER }}
@@ -81,14 +80,11 @@ jobs:
           WEBDAV_URL: ${{ secrets.WEBDAV_URL }}
           WEBDAV_USER: ${{ secrets.WEBDAV_USER }}
           WEBDAV_PASS: ${{ secrets.WEBDAV_PASS }}
-          ALLOWED_EMAILS: ${{ vars.ALLOWED_EMAILS }}
         run: |
           IMAGE_TAG="main-$(echo '${{ github.sha }}' | cut -c1-7)"
           ENV_CONTENT=$(printf '%s\n' \
             "IMAGE_TAG=${IMAGE_TAG}" \
             "GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}" \
-            "GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}" \
-            "ALLOWED_EMAILS=${ALLOWED_EMAILS}" \
             "JACKETT_API_KEY=${JACKETT_API_KEY}" \
             "TMDB_API_KEY=${TMDB_API_KEY}" \
             "TRANSMISSION_USER=${TRANSMISSION_USER}" \

@@ -1,0 +1,27 @@
+binds:
+- port: 3000
+  listeners:
+  - routes:
+    - mcpAuthentication:
+        mode: strict
+        issuer: https://accounts.google.com/
+        audiences:
+        - ${GOOGLE_CLIENT_ID}
+        jwks:
+          url: https://www.googleapis.com/oauth2/v3/certs
+      policies:
+        cors:
+          allowOrigins: ["*"]
+          allowHeaders: [mcp-protocol-version, content-type, authorization]
+      backends:
+      - mcp:
+          targets:
+          - name: reelm_torrents
+            streamableHttp:
+              url: http://reelm-transmission:8000/mcp
+          - name: reelm_search
+            streamableHttp:
+              url: http://reelm-jackett:8000/mcp
+          - name: reelm_storage
+            streamableHttp:
+              url: http://reelm-storage:8000/mcp
