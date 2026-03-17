@@ -51,10 +51,13 @@ def _propfind(path: str, depth: int = 1) -> list[FileEntry]:
         resp = c.request("PROPFIND", encoded, headers={"Depth": str(depth)})
         resp.raise_for_status()
 
-    tree = ET.fromstring(resp.text)
+    tree = ET.fromstring(resp.text)  # noqa: S314 — trusted internal WebDAV server
     entries = []
     for r in tree.findall(".//D:response", DAV_NS):
-        href = r.find("D:href", DAV_NS).text
+        href_el = r.find("D:href", DAV_NS)
+        if href_el is None or href_el.text is None:
+            continue
+        href = href_el.text
         # Skip the directory itself
         decoded = unquote(href)
         # Strip the webdav prefix to get a clean path
@@ -65,7 +68,7 @@ def _propfind(path: str, depth: int = 1) -> list[FileEntry]:
 
         is_dir = r.find(".//D:collection", DAV_NS) is not None
         size_el = r.find(".//D:getcontentlength", DAV_NS)
-        size = int(size_el.text) if size_el is not None else 0
+        size = int(size_el.text or 0) if size_el is not None else 0
 
         name = clean.rstrip("/").split("/")[-1]
         # Skip hidden/system files
@@ -74,13 +77,15 @@ def _propfind(path: str, depth: int = 1) -> list[FileEntry]:
 
         # Directories report filesystem block size, not content size
         file_size = 0 if is_dir else size
-        entries.append(FileEntry(
-            name=name,
-            path=clean + ("/" if is_dir else ""),
-            is_dir=is_dir,
-            size=file_size,
-            size_mb=round(file_size / (1024 * 1024), 1),
-        ))
+        entries.append(
+            FileEntry(
+                name=name,
+                path=clean + ("/" if is_dir else ""),
+                is_dir=is_dir,
+                size=file_size,
+                size_mb=round(file_size / (1024 * 1024), 1),
+            )
+        )
     return entries
 
 
@@ -120,7 +125,10 @@ def _walk(path: str, max_depth: int | None = None) -> list[FileEntry]:
 @mcp.tool
 def get_dir_size(
     path: Annotated[str, Field(description="Directory path to measure")],
-    max_depth: Annotated[int | None, Field(description="Max recursion depth. 1=immediate children only. None=full recursive. Use 1-2 for large dirs.")] = None,
+    max_depth: Annotated[
+        int | None,
+        Field(description="Max recursion depth. 1=immediate children only. None=full recursive. Use 1-2 for large dirs."),
+    ] = None,
 ) -> dict:
     """Get total size of a directory. Use max_depth=1 for quick scan of large dirs, None for full recursive (slow on deep trees)."""
     entries = _walk(path, max_depth=max_depth)

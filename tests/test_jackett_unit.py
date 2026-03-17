@@ -126,7 +126,6 @@ class TestModels:
         assert result.publish_date is None
 
 
-
 @pytest.mark.unit
 class TestMakeId:
     def test_returns_prefixed_hash(self):

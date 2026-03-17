@@ -29,7 +29,7 @@ def _parse_tsv_rows(result) -> list[dict[str, str]]:
     if not lines:
         return []
     headers = lines[0].split("\t")
-    return [{h: v for h, v in zip(headers, row.split("\t"))} for row in lines[1:]]
+    return [{h: v for h, v in zip(headers, row.split("\t"), strict=False)} for row in lines[1:]]
 
 
 @pytest.mark.contract

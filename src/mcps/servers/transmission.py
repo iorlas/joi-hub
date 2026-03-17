@@ -132,7 +132,7 @@ def _torrent_to_model(t: Any) -> Torrent:
     return Torrent(
         id=t.id,
         name=t.name,
-        status=t.status.value if hasattr(t.status, "value") else str(t.status),
+        status=t.status.value if hasattr(t.status, "value") else str(t.status),  # type: ignore[invalid-argument-type]
         progress=t.progress,
         eta=int(t.eta.total_seconds()) if t.eta is not None and t.eta.total_seconds() >= 0 else None,
         total_size=t.total_size,

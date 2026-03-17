@@ -26,6 +26,7 @@ def vcr_config():
 @pytest.fixture(autouse=True)
 def reset_transmission_client():
     import mcps.servers.transmission as tm
+
     tm._client = None
     yield
     tm._client = None

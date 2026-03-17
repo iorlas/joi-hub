@@ -1,5 +1,14 @@
 [
   {
+    "name": "get_free_space",
+    "description": "Get free disk space in the download directory.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {},
+      "type": "object"
+    }
+  },
+  {
     "name": "list_torrents",
     "description": "List torrents (TSV). No filter = all.\nFields: name, status, progress, eta, total_size, error_string, download_speed, file_count.\nCRITICAL: downloaded/completed = progress==`100` ONLY.\nNEVER use status for downloaded. status=='downloading' = ACTIVELY in-progress.",
     "inputSchema": {

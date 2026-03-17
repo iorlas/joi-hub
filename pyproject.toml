@@ -24,9 +24,13 @@ dependencies = [
 dev = [
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
+    "pytest-cov>=6.2.0",
     "pytest-mock>=3.15.1",
     "pytest-recording>=0.13.4",
     "ruff>=0.14.0",
+    "ty>=0.0.1a7",
+    "pip-audit>=2.9.0",
+    "yamllint>=1.37.0",
 ]
 
 [build-system]
@@ -44,13 +48,35 @@ target-version = "py312"
 line-length = 140
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP"]
+select = ["E", "F", "I", "N", "W", "UP", "B", "S", "SIM", "PTH", "RUF"]
+ignore = [
+    "SIM108",  # ternary — often hurts readability
+    "SIM110",  # any() rewrite — often hurts readability
+    "RUF001",  # ambiguous unicode — we use Cyrillic intentionally (Russian alt titles)
+    "RUF015",  # next(iter()) vs [0] — readability preference
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # assert is how tests work
+"tests/conftest.py" = ["E402"]  # env setup before imports is intentional
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --strict-markers"
+addopts = "-v --strict-markers --cov=mcps --cov-fail-under=40 --cov-report=term-missing:skip-covered --no-cov-on-fail"
+# TODO: raise --cov-fail-under to 95 as test coverage improves
 pythonpath = ["src"]
 markers = [
     "contract: contract tests (VCR replay)",
     "unit: unit tests",
 ]
+
+[tool.ty.environment]
+python-version = "3.12"
+root = ["src"]
+
+[tool.coverage.run]
+source = ["mcps"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

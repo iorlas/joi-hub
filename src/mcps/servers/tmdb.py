@@ -160,7 +160,7 @@ def search_media(
             alt = _fetch_alt_titles("tv", tv.id)
             items.append(_tv_to_media(tv, alt))
     else:
-        assert query is not None
+        assert query is not None  # noqa: S101 — guard for type narrowing
         search = tmdb.Search()
         if media_type != "tv":
             movies = search.movie(query=query, year=year).get("results", [])
@@ -177,9 +177,9 @@ def search_media(
 
 @mcp.tool
 def discover_movies(
-    source: Annotated[Literal["recommendations", "similar", "genre"], Field(
-        description="Source: recommendations/similar (movie_id) or genre (genre_id)"
-    )],
+    source: Annotated[
+        Literal["recommendations", "similar", "genre"], Field(description="Source: recommendations/similar (movie_id) or genre (genre_id)")
+    ],
     movie_id: Annotated[int | None, Field(description="TMDB movie ID")] = None,
     genre_id: Annotated[int | None, Field(description="TMDB genre ID")] = None,
     page: Annotated[int, Field()] = 1,

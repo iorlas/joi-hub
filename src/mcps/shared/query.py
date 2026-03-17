@@ -72,6 +72,7 @@ def project[T: BaseModel](items: list[T], fields: None = None) -> list[T]: ...
 @overload
 def project[T: BaseModel](items: list[T], fields: list[str]) -> list[dict]: ...
 
+
 def project[T: BaseModel](
     items: list[T],
     fields: list[str] | None = None,
@@ -89,18 +90,18 @@ def project[T: BaseModel](
 
 
 def _tsv_from_rows(keys: list[str], rows: list[dict]) -> str:
-    lines = ['\t'.join(keys)]
+    lines = ["\t".join(keys)]
     for row in rows:
-        lines.append('\t'.join(str(row[k]) for k in keys))
-    return '\n'.join(lines)
+        lines.append("\t".join(str(row[k]) for k in keys))
+    return "\n".join(lines)
 
 
-def to_tsv(items: list[BaseModel] | list[dict]) -> str:
+def to_tsv(items: list) -> str:  # accepts list[BaseModel] or list[dict]
     if not items:
         return ""
     first = items[0]
     if isinstance(first, BaseModel):
         keys = list(first.model_fields.keys())
-        return _tsv_from_rows(keys, [item.model_dump() for item in items])  # type: ignore[union-attr]
+        return _tsv_from_rows(keys, [item.model_dump() for item in items])
     keys = list(first.keys())
-    return _tsv_from_rows(keys, items)  # type: ignore[arg-type]
+    return _tsv_from_rows(keys, items)

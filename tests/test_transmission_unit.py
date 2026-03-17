@@ -399,14 +399,16 @@ class TestResolveUrl:
         result = _resolve_url("http://jackett/dl/789")
         assert result == "http://jackett/dl/789"
 
-    def test_returns_original_if_200_ok(self, mocker):
+    def test_returns_bytes_if_200_ok(self, mocker):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.headers = {}
+        mock_resp.content = b"torrent-file-bytes"
+        mock_resp.url = "http://jackett/dl/torrent.torrent"
         mocker.patch("httpx.get", return_value=mock_resp)
 
         result = _resolve_url("http://jackett/dl/torrent.torrent")
-        assert result == "http://jackett/dl/torrent.torrent"
+        assert result == b"torrent-file-bytes"
 
     def test_returns_original_on_exception(self, mocker):
         mocker.patch("httpx.head", side_effect=Exception("Network error"))

@@ -51,6 +51,6 @@ class TestPaginate:
 
     def test_exact_boundary(self):
         items = list(range(50))
-        paginated, total, has_more = paginate(items, limit=50, offset=0)
+        paginated, _total, has_more = paginate(items, limit=50, offset=0)
         assert len(paginated) == 50
         assert has_more is False

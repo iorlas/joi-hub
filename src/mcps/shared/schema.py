@@ -4,7 +4,7 @@ from fastmcp import FastMCP
 from fastmcp.tools import Tool
 
 
-def strip_nullable_anyof(schema: dict[str, Any]) -> dict[str, Any]:
+def strip_nullable_anyof(schema: Any) -> Any:
     """Replace {"anyOf": [T, {"type":"null"}]} with just T, recursively."""
     if isinstance(schema, dict):
         if "anyOf" in schema:
@@ -26,6 +26,6 @@ def strip_nullable_anyof(schema: dict[str, Any]) -> dict[str, Any]:
 def optimize_tool_schemas(mcp: FastMCP) -> None:
     """Post-process all tool schemas on a FastMCP instance to reduce token usage."""
     provider = mcp.providers[0]
-    for component in provider._components.values():
+    for component in provider._components.values():  # type: ignore[unresolved-attribute]
         if isinstance(component, Tool):
             component.parameters = strip_nullable_anyof(component.parameters)

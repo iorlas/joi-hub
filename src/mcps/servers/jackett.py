@@ -31,7 +31,7 @@ ID_PREFIX = "jkt_"
 
 
 def _make_id(guid: str) -> str:
-    return ID_PREFIX + hashlib.md5(guid.encode()).hexdigest()[:8]
+    return ID_PREFIX + hashlib.md5(guid.encode(), usedforsecurity=False).hexdigest()[:8]
 
 
 class TorrentSummary(BaseModel):

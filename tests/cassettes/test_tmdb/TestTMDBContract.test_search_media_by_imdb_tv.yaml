@@ -1,0 +1,51 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - close
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.5
+    method: GET
+    uri: https://api.themoviedb.org/3/find/tt0903747?external_source=imdb_id
+  response:
+    body:
+      string: '{"status_code":7,"status_message":"Invalid API key: You must be granted
+        a valid key.","success":false}
+
+        '
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=86400
+      Cache-Control:
+      - public, max-age=300
+      Connection:
+      - close
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 17 Mar 2026 02:16:45 GMT
+      Server:
+      - openresty
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      Via:
+      - 1.1 0bd6add7632acf8bf8254ba5a631c8aa.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - W3cHw0XSOiZD_8PYUdH4JKzaU324tR1swplJBcqpvdrOuXLVz54aSg==
+      X-Amz-Cf-Pop:
+      - IST50-P3
+      X-Cache:
+      - Error from cloudfront
+    status:
+      code: 401
+      message: Unauthorized
+version: 1
