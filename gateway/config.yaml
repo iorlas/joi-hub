@@ -19,6 +19,14 @@ binds:
           exact: /mcp
       - path:
           exact: /.well-known/oauth-protected-resource/mcp
+      - path:
+          exact: /register
+      - path:
+          exact: /.well-known/oauth-authorization-server
+      - path:
+          exact: /authorize
+      - path:
+          exact: /token
       policies:
         cors:
           allowOrigins: ["*"]
