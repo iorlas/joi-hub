@@ -57,13 +57,12 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101"]  # assert is how tests work
+"tests/**" = ["S101", "S106"]  # assert is how tests work; hardcoded test credentials are fine
 "tests/conftest.py" = ["E402"]  # env setup before imports is intentional
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --strict-markers --cov=mcps --cov-fail-under=40 --cov-report=term-missing:skip-covered --no-cov-on-fail"
-# TODO: raise --cov-fail-under to 95 as test coverage improves
+addopts = "-v --strict-markers --cov=mcps --cov-fail-under=90 --cov-report=term-missing:skip-covered --no-cov-on-fail"
 pythonpath = ["src"]
 markers = [
     "contract: contract tests (VCR replay)",

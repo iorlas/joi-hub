@@ -246,6 +246,59 @@ class TestSearchNormalized:
         assert result == []
 
 
+class NoKeyModel(BaseModel):
+    """Model without id/index/name/path — triggers _idx fallback."""
+
+    label: str
+    value: int
+
+
+@pytest.mark.unit
+class TestApplyQueryFallbackKey:
+    """Tests for models without standard key fields (id/index/name/path)."""
+
+    def test_filter_works_without_standard_key(self):
+        items = [NoKeyModel(label="a", value=1), NoKeyModel(label="b", value=2)]
+        result = apply_query(items, filter_expr="value==`2`")
+        assert len(result) == 1
+        assert result[0].label == "b"
+
+    def test_sort_works_without_standard_key(self):
+        items = [NoKeyModel(label="a", value=3), NoKeyModel(label="b", value=1)]
+        result = apply_query(items, sort_by="value")
+        assert result[0].value == 1
+        assert result[1].value == 3
+
+
+@pytest.mark.unit
+class TestToTsv:
+    def test_tsv_from_models(self):
+        from mcps.shared.query import to_tsv
+
+        items = [Item(id=1, name="Test", status="ok", progress=50.0)]
+        result = to_tsv(items)
+        lines = result.split("\n")
+        assert "id" in lines[0]
+        assert "name" in lines[0]
+        assert "1" in lines[1]
+        assert "Test" in lines[1]
+
+    def test_tsv_from_dicts(self):
+        from mcps.shared.query import to_tsv
+
+        items = [{"id": 1, "name": "Test"}, {"id": 2, "name": "Other"}]
+        result = to_tsv(items)
+        lines = result.split("\n")
+        assert lines[0] == "id\tname"
+        assert lines[1] == "1\tTest"
+        assert lines[2] == "2\tOther"
+
+    def test_tsv_empty(self):
+        from mcps.shared.query import to_tsv
+
+        assert to_tsv([]) == ""
+
+
 @pytest.mark.unit
 class TestIndexKeyField:
     class FileItem(BaseModel):
