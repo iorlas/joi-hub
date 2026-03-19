@@ -26,6 +26,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Validate compose syntax before anything else
+      - name: Validate compose syntax
+        run: |
+          export IMAGE_TAG=test
+          export TRANSMISSION_USER=x TRANSMISSION_PASS=x
+          export JACKETT_API_KEY=x WEBDAV_URL=x WEBDAV_USER=x WEBDAV_PASS=x
+          export AUTH0_DOMAIN=x AUTH0_CLIENT_ID=x AUTH0_CLIENT_SECRET=x AUTH0_AUDIENCE=x
+          docker compose -f docker-compose.prod.yml config --quiet
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -47,7 +56,7 @@ jobs:
             type=ref,event=pr
             type=sha,prefix=main-
 
-      - name: Build and push MCP servers image
+      - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@v6
         with:
@@ -58,24 +67,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Extract gateway metadata
-        id: gw-meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-gateway
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix=main-
-
-      - name: Build and push gateway image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./gateway
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.gw-meta.outputs.tags }}
-          labels: ${{ steps.gw-meta.outputs.labels }}
-
       - name: Generate artifact attestation
         if: github.event_name != 'pull_request'
         uses: actions/attest-build-provenance@v1
@@ -84,7 +75,7 @@ jobs:
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
 
-      - name: Sync compose file and env to Dokploy (atomic)
+      - name: Sync compose + env to Dokploy (atomic) and verify
         if: github.event_name != 'pull_request'
         env:
           DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
@@ -96,8 +87,14 @@ jobs:
           WEBDAV_URL: ${{ secrets.WEBDAV_URL }}
           WEBDAV_USER: ${{ secrets.WEBDAV_USER }}
           WEBDAV_PASS: ${{ secrets.WEBDAV_PASS }}
+          AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
+          AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+          AUTH0_AUDIENCE: ${{ secrets.AUTH0_AUDIENCE }}
         run: |
           IMAGE_TAG="main-$(echo '${{ github.sha }}' | cut -c1-7)"
+
+          # Build full env payload — every var Dokploy needs (full replacement, omitted = wiped)
           ENV_CONTENT=$(printf '%s\n' \
             "IMAGE_TAG=${IMAGE_TAG}" \
             "JACKETT_API_KEY=${JACKETT_API_KEY}" \
@@ -106,9 +103,14 @@ jobs:
             "WEBDAV_URL=${WEBDAV_URL}" \
             "WEBDAV_USER=${WEBDAV_USER}" \
             "WEBDAV_PASS=${WEBDAV_PASS}" \
+            "AUTH0_DOMAIN=${AUTH0_DOMAIN}" \
+            "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
+            "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
+            "AUTH0_AUDIENCE=${AUTH0_AUDIENCE}" \
           )
 
-          curl -s --fail-with-body -X POST "${DOKPLOY_URL}/api/compose.update" \
+          # Atomic update — env + compose together
+          RESPONSE=$(curl -s --fail-with-body -X POST "${DOKPLOY_URL}/api/compose.update" \
             -H "x-api-key: ${DOKPLOY_AUTH_TOKEN}" \
             -H "Content-Type: application/json" \
             -d "$(jq -n \
@@ -116,13 +118,54 @@ jobs:
               --arg env "$ENV_CONTENT" \
               --arg compose "$(cat docker-compose.prod.yml)" \
               '{composeId: $id, env: $env, composeFile: $compose}'
-            )"
+            )")
 
-      - name: Trigger Dokploy deploy
+          # VERIFY update persisted (compose.update silently ignores wrong field names)
+          STORED_LEN=$(echo "$RESPONSE" | jq -r '.composeFile | length')
+          if [ "$STORED_LEN" -lt 10 ]; then
+            echo "::error::compose.update did not persist composeFile (got $STORED_LEN chars)"
+            echo "$RESPONSE" | jq -r '.sourceType, .composeFile[:100]'
+            exit 1
+          fi
+          echo "compose.update verified: $STORED_LEN chars persisted"
+
+      - name: Deploy and wait for completion
         if: github.event_name != 'pull_request'
-        uses: benbristow/dokploy-deploy-action@0.2.2
-        with:
-          api_token: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
-          application_id: ${{ secrets.DOKPLOY_COMPOSE_ID }}
-          dokploy_url: ${{ secrets.DOKPLOY_URL }}
-          service_type: compose
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_AUTH_TOKEN: ${{ secrets.DOKPLOY_AUTH_TOKEN }}
+          DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+        run: |
+          IMAGE_TAG="main-$(echo '${{ github.sha }}' | cut -c1-7)"
+
+          # Trigger deploy
+          curl -s --fail-with-body -X POST "${DOKPLOY_URL}/api/compose.deploy" \
+            -H "x-api-key: ${DOKPLOY_AUTH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"composeId\": \"${DOKPLOY_COMPOSE_ID}\", \"title\": \"Deploy ${IMAGE_TAG}\"}"
+
+          echo "Deploy triggered, polling status..."
+
+          # Poll deployment status (60 attempts x 5s = 5 min timeout)
+          for i in $(seq 1 60); do
+            sleep 5
+            STATUS=$(curl -s "${DOKPLOY_URL}/api/deployment.allByCompose?composeId=${DOKPLOY_COMPOSE_ID}" \
+              -H "x-api-key: ${DOKPLOY_AUTH_TOKEN}" | jq -r '.[0].status // "unknown"')
+
+            echo "  Attempt $i/60: status=$STATUS"
+
+            if [ "$STATUS" = "done" ]; then
+              echo "Deploy succeeded"
+              exit 0
+            fi
+
+            if [ "$STATUS" = "error" ]; then
+              echo "::error::Deploy FAILED"
+              curl -s "${DOKPLOY_URL}/api/deployment.allByCompose?composeId=${DOKPLOY_COMPOSE_ID}" \
+                -H "x-api-key: ${DOKPLOY_AUTH_TOKEN}" | jq -r '.[0].errorMessage // "no error message"'
+              exit 1
+            fi
+          done
+
+          echo "::error::Deploy TIMEOUT (5 min)"
+          exit 1

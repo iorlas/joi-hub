@@ -15,12 +15,17 @@ x-reelm: &reelm
 services:
   # ── Gateway (public, handles auth + federation) ──
   gateway:
-    image: ghcr.io/iorlas/reelm-gateway:${IMAGE_TAG}
-    expose:
-      - "3000"
-    networks:
-      - dokploy-network
-    restart: unless-stopped
+    <<: *reelm
+    command: ["sh", "-c", "uv run uvicorn mcps.gateway:app --host 0.0.0.0 --port 8000"]
+    environment:
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID}
+      AUTH0_CLIENT_SECRET: ${AUTH0_CLIENT_SECRET}
+      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE}
+      BASE_URL: https://reelm.shen.iorlas.net
+      TRANSMISSION_MCP_URL: http://reelm-transmission:8000/mcp/
+      JACKETT_MCP_URL: http://reelm-jackett:8000/mcp/
+      STORAGE_MCP_URL: http://reelm-storage:8000/mcp/
     depends_on:
       reelm-transmission:
         condition: service_healthy
@@ -33,7 +38,7 @@ services:
       traefik.http.routers.reelm.rule: Host(`reelm.shen.iorlas.net`)
       traefik.http.routers.reelm.entrypoints: websecure
       traefik.http.routers.reelm.tls.certresolver: letsencrypt
-      traefik.http.services.reelm.loadbalancer.server.port: "3000"
+      traefik.http.services.reelm.loadbalancer.server.port: "8000"
 
   # ── Reelm MCP servers (internal, no auth) ──
   reelm-transmission:

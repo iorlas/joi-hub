@@ -26,6 +26,7 @@ lint-docker:
 # ── Compose syntax validation ──
 lint-compose:
 	IMAGE_TAG=lint TRANSMISSION_USER=x TRANSMISSION_PASS=x JACKETT_API_KEY=x WEBDAV_URL=x WEBDAV_USER=x WEBDAV_PASS=x \
+		AUTH0_DOMAIN=x AUTH0_CLIENT_ID=x AUTH0_CLIENT_SECRET=x AUTH0_AUDIENCE=x \
 		docker compose -f docker-compose.prod.yml config --quiet
 	docker compose -f docker-compose.yml config --quiet
 
