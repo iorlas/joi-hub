@@ -1,18 +1,24 @@
-# Reelm — AI Agent Context
+# Reelm — AI-native Media Agent
 
-Your personal media agent — AI-native alternative to Sonarr/Radarr.
+Reelm collects, downloads, and manages media via MCP servers (Transmission, Jackett, Storage) behind a FastMCP gateway with Auth0 OAuth.
 
-## Build & Test
+## Before Making Code Decisions
 
-- `make check` — full quality gate (lint + test), run before every commit
-- `make lint` — all linters (ruff, ty, yamllint, hadolint, compose validation, pip-audit)
-- `make test` — pytest with 95% coverage gate (shows only files below threshold)
-- `make fmt` — auto-fix Python formatting
+- **Before deploying:** `~/Documents/Knowledge/Researches/036-deployment-platform/guidelines/` — Dokploy API, Traefik, CI/CD, production lessons
+- **Before changing auth/gateway:** `~/Documents/Knowledge/Researches/036-deployment-platform/guidelines/mcp-auth-gateway.md` — MCP OAuth options, Auth0 DCR
+
+## Dev Commands
+
+- Run tests: `make test` (with coverage — check for uncovered lines in files you changed)
+- Check diff coverage: `make coverage-diff` — coverage of changed lines vs main. Fails below 95%. Run after writing tests.
+- Lint: `make lint` (check only, never modifies files — safe for AI to run anytime)
+- Fix: `make fix` (auto-fix formatting and import sorting, then runs `make lint` to verify)
+- Full gate: `make check` (lint + test)
 
 ## Architecture
 
 ```
-Internet → Agentgateway (Rust, OAuth 2.1, tool federation)
+Internet → FastMCP Gateway (OAuth 2.1, Auth0, tool federation)
                ├→ reelm-transmission (MCP server, Transmission RPC)
                ├→ reelm-jackett (MCP server, torrent search)
                ├→ reelm-storage (MCP server, WebDAV file ops)
@@ -20,8 +26,9 @@ Internet → Agentgateway (Rust, OAuth 2.1, tool federation)
 ```
 
 - **Each MCP server is standalone** — no auth, no shared state, independently deployable
-- **Agentgateway** handles auth (OAuth 2.1) and federation (virtual MCP, tool prefixing)
+- **Gateway** handles auth (Auth0 OAuth 2.1 via FastMCP) and federation (tool prefixing)
 - **Source layout**: `src/mcps/servers/` — one file per MCP server, `src/mcps/shared/` — pagination, query, schema utils
+- **Gateway**: `src/mcps/gateway.py` — FastMCP proxy with Auth0Provider + mounted backends
 
 ## Conventions
 
@@ -33,15 +40,14 @@ Internet → Agentgateway (Rust, OAuth 2.1, tool federation)
 
 ## Deployment
 
-- **Model B**: GitHub Actions builds images → pushes to GHCR → updates Dokploy via API → deploys
+- **Model B**: GitHub Actions builds image → pushes to GHCR → updates Dokploy via API → deploys
 - **Compose**: `docker-compose.prod.yml` is the source of truth, pushed to Dokploy atomically
 - **Images**: SHA-pinned tags (`main-<sha>`), never `:latest` for our images
 - **Dokploy API only** — never SSH for routine operations
-- See `~/Documents/Knowledge/Researches/036-deployment-platform/guidelines/` for full deployment platform docs
 
 ## Never
 
-- Never add auth code to MCP servers — agentgateway handles all auth
+- Never add auth code to MCP servers — gateway handles all auth
 - Never use SSH for deployment debugging — escalation: API → UI → Swagger → SSH (last resort)
 - Never use `:latest` tag for reelm images — always SHA-pinned
 - Never manually create/start/stop Dokploy-managed containers with docker commands

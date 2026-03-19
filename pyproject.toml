@@ -31,6 +31,7 @@ dev = [
     "ty>=0.0.1a7",
     "pip-audit>=2.9.0",
     "yamllint>=1.37.0",
+    "diff-cover>=9.0",
 ]
 
 [build-system]
@@ -46,6 +47,7 @@ prerelease = "allow"
 [tool.ruff]
 target-version = "py312"
 line-length = 140
+output-format = "concise"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "S", "SIM", "PTH", "RUF"]
@@ -60,22 +62,39 @@ ignore = [
 "tests/**" = ["S101", "S106"]  # assert is how tests work; hardcoded test credentials are fine
 "tests/conftest.py" = ["E402"]  # env setup before imports is intentional
 
+[tool.ty.environment]
+python-version = "3.12"
+root = ["src"]
+
+[tool.ty.rules]
+possibly-unresolved-reference = "error"
+invalid-argument-type = "error"
+missing-argument = "error"
+unsupported-operator = "error"
+division-by-zero = "error"
+unused-ignore-comment = "warn"
+redundant-cast = "warn"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --strict-markers --cov=mcps --cov-fail-under=90 --cov-report=term-missing:skip-covered --no-cov-on-fail"
+addopts = "-v --strict-markers --cov --cov-report=term:skip-covered --cov-report=xml --cov-fail-under=90"
 pythonpath = ["src"]
 markers = [
     "contract: contract tests (VCR replay)",
     "unit: unit tests",
 ]
 
-[tool.ty.environment]
-python-version = "3.12"
-root = ["src"]
-
 [tool.coverage.run]
-source = ["mcps"]
+source = ["src/mcps"]
+branch = true
 
 [tool.coverage.report]
-show_missing = true
+show_missing = false
 skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "\\.\\.\\.",
+]

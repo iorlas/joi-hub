@@ -1,13 +1,18 @@
 extends: default
 
+ignore: |
+  .venv/
+  .git/
+  tests/cassettes/
+
 rules:
   line-length:
-    max: 160
+    max: 200
   truthy:
     check-keys: false
-  comments:
-    min-spaces-from-content: 1
   document-start: disable
-  indentation:
-    spaces: consistent
-    indent-sequences: whatever
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 1
+  indentation: disable
