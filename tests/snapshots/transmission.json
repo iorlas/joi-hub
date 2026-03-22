@@ -51,7 +51,7 @@
       "additionalProperties": false,
       "properties": {
         "url": {
-          "description": "URL or magnet",
+          "description": "Magnet link (preferred) or download URL. Use magneturl from search when available.",
           "type": "string"
         },
         "download_dir": {

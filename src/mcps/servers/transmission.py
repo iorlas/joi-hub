@@ -114,6 +114,8 @@ def _resolve_url(url: str) -> str | bytes:
             location = resp.headers.get("location", "")
             if location.startswith("magnet:"):
                 return location
+        if resp.status_code == 404:
+            raise RuntimeError("Torrent download link expired (Jackett cache cleared). Please search again and retry with a fresh result.")
         # Got a .torrent file — return raw bytes for Transmission
         if resp.status_code == 200 and resp.content:
             return resp.content
@@ -224,7 +226,10 @@ def list_torrents(
 
 @mcp.tool
 def add_torrent(
-    url: Annotated[str, Field(description="URL or magnet")],
+    url: Annotated[
+        str,
+        Field(description="Magnet link (preferred) or download URL. Use magneturl from search when available."),
+    ],
     download_dir: Annotated[str | None, Field(description="Download directory")] = None,
 ) -> Torrent:
     """Add torrent by URL or magnet."""
