@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["httpx>=0.28", "websockets>=15"]
+# dependencies = ["httpx>=0.28,<1.0", "websockets>=15"]
 # ///
 """dokctl — thin CLI over the Dokploy API.
 
