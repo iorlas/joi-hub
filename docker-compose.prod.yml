@@ -130,11 +130,11 @@ services:
     environment:
       LLM_PROVIDER: openai
       LLM_BASE_URL: http://litellm:4000
-      LLM_API_KEY: ${LITELLM_MASTER_KEY}
+      LLM_API_KEY: no-auth
       LLM_MODEL: llama3.2:3b
       EMBEDDER_PROVIDER: openai
       EMBEDDER_BASE_URL: http://litellm:4000
-      EMBEDDER_API_KEY: ${LITELLM_MASTER_KEY}
+      EMBEDDER_API_KEY: no-auth
       EMBEDDER_MODEL: nomic-embed-text
       DATABASE_URL: postgresql://${OPENMEMORY_POSTGRES_USER}:${OPENMEMORY_POSTGRES_PASSWORD}@openmemory-db:5432/openmemory
       VECTOR_STORE_PROVIDER: pgvector
