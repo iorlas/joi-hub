@@ -16,7 +16,12 @@
       "properties": {
         "filter_expr": {
           "default": null,
-          "description": "JMESPath. Downloaded: progress==`100` (NOT status). Active: status=='downloading'. Text: search(@, 'text')",
+          "description": "CEL filter. Examples: progress == 100, status == 'downloading', id == 42",
+          "type": "string"
+        },
+        "search": {
+          "default": null,
+          "description": "Fuzzy text search across all fields (handles Cyrillic, transliteration)",
           "type": "string"
         },
         "fields": {
@@ -135,7 +140,12 @@
         },
         "filter_expr": {
           "default": null,
-          "description": "JMESPath filter; search(@, 'text') for text search",
+          "description": "CEL filter. Examples: size > 1000000, name.contains('.mkv')",
+          "type": "string"
+        },
+        "search": {
+          "default": null,
+          "description": "Fuzzy text search across all fields (handles Cyrillic, transliteration)",
           "type": "string"
         },
         "fields": {

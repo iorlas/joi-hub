@@ -172,7 +172,8 @@ def search_torrents(
     season: Annotated[int | None, Field()] = None,
     episode: Annotated[int | None, Field()] = None,
     categories: Annotated[list[int] | None, Field(description="Category IDs (2000=Movies, 5000=TV)")] = None,
-    filter_expr: Annotated[str | None, Field(description="JMESPath filter; search(@, 'text') for text search")] = None,
+    filter_expr: Annotated[str | None, Field(description="CEL filter. Examples: seeders > 10, size > 1000000000")] = None,
+    search: Annotated[str | None, Field(description="Fuzzy text search across all fields (handles Cyrillic, transliteration)")] = None,
     fields: Annotated[list[str] | None, Field(description="Fields (id auto-incl.)")] = None,
     sort_by: Annotated[str | None, Field(description="Sort field, - prefix for desc")] = None,
     limit: Annotated[int, Field()] = DEFAULT_LIMIT,
@@ -198,7 +199,7 @@ def search_torrents(
                 seen_ids.add(item.id)
                 results.append(item)
 
-    filtered = apply_query(results, filter_expr, sort_by, limit=None)
+    filtered = apply_query(results, filter_expr, search=search, sort_by=sort_by, limit=None)
     paginated, total, has_more = paginate(filtered, limit, offset)
     projected = project(paginated, fields)
     return TsvList(data=to_tsv(projected), total=total, offset=offset, has_more=has_more)

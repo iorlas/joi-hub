@@ -199,8 +199,9 @@ def get_free_space() -> DiskUsage:
 def list_torrents(
     filter_expr: Annotated[
         str | None,
-        Field(description="JMESPath. Downloaded: progress==`100` (NOT status). Active: status=='downloading'. Text: search(@, 'text')"),
+        Field(description="CEL filter. Examples: progress == 100, status == 'downloading', id == 42"),
     ] = None,
+    search: Annotated[str | None, Field(description="Fuzzy text search across all fields (handles Cyrillic, transliteration)")] = None,
     fields: Annotated[
         list[str] | None,
         Field(
@@ -218,7 +219,7 @@ def list_torrents(
     NEVER use status for downloaded. status=='downloading' = ACTIVELY in-progress."""
     torrents = get_client().get_torrents()
     items = [_torrent_to_model(t) for t in torrents]
-    filtered = apply_query(items, filter_expr, sort_by, limit=None)
+    filtered = apply_query(items, filter_expr, search=search, sort_by=sort_by, limit=None)
     paginated, total, has_more = paginate(filtered, limit, offset)
     result = project(paginated, fields)
     return TsvList(data=to_tsv(result), total=total, offset=offset, has_more=has_more)
@@ -272,7 +273,8 @@ def resume_torrent(
 def list_files(
     torrent_id: Annotated[int, Field()],
     depth: Annotated[int | None, Field(description="Depth. 1=top, 2=sub, None=all")] = 1,
-    filter_expr: Annotated[str | None, Field(description="JMESPath filter; search(@, 'text') for text search")] = None,
+    filter_expr: Annotated[str | None, Field(description="CEL filter. Examples: size > 1000000, name.contains('.mkv')")] = None,
+    search: Annotated[str | None, Field(description="Fuzzy text search across all fields (handles Cyrillic, transliteration)")] = None,
     fields: Annotated[list[str] | None, Field(description="Fields (index auto-incl.)")] = None,
     sort_by: Annotated[str | None, Field(description="Sort field, - prefix for desc")] = None,
     limit: Annotated[int, Field()] = DEFAULT_LIMIT,
@@ -286,7 +288,7 @@ def list_files(
         files.append(TorrentFile(index=i, name=f.name, size=f.size, completed=f.completed, priority=prio))
 
     entries = _aggregate_by_depth(files, depth) if depth else files
-    filtered = apply_query(entries, filter_expr, sort_by, limit=None)
+    filtered = apply_query(entries, filter_expr, search=search, sort_by=sort_by, limit=None)
     paginated, total, has_more = paginate(filtered, limit, offset)
     result = project(paginated, fields)
 
