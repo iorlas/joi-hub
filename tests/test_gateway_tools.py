@@ -46,7 +46,7 @@ async def test_gateway_lists_all_tools(gateway):
 
     # Spot-check known tools exist
     assert "reelm_torrents_list_torrents" in tool_names
-    assert "reelm_search_search_torrents" in tool_names
+    assert "reelm_search_find_torrents" in tool_names
     assert "reelm_storage_list_dir" in tool_names
     assert "reelm_media_search_media" in tool_names
     assert "reelm_memory_remember" in tool_names

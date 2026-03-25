@@ -99,7 +99,7 @@ def list_dir(
     limit: Annotated[int, Field()] = DEFAULT_LIMIT,
     offset: Annotated[int, Field()] = 0,
 ) -> TsvList:
-    """List files and directories. Root has: media/ (movies/, tv/, torrents/), Dasha/.
+    """List files and directories. Downloads land in media/torrents/download/ (with category subdirs: tv/, movies/, etc).
     Fields: name, path, is_dir, size, size_mb."""
     entries = _propfind(path)
     filtered = apply_query(entries, filter_expr, search=search, sort_by=sort_by, limit=None)

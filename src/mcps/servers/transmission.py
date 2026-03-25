@@ -117,7 +117,7 @@ def _resolve_url(url: str) -> str | bytes:
         if resp.status_code == 404:
             raise RuntimeError(
                 "Torrent download link expired (Jackett cache cleared)."
-                " Action: search again with search_torrents, then use get_torrent to get a fresh magnet link."
+                " Action: search again with find_torrents, then use get_torrent to get a fresh magnet link."
             )
         # Got a .torrent file — return raw bytes for Transmission
         if resp.status_code == 200 and resp.content:
