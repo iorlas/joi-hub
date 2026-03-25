@@ -222,8 +222,8 @@ def list_torrents(
 ) -> TsvList:
     """List torrents (TSV). No filter = all.
     Fields: name, status, progress, eta, total_size, error_string, download_speed, file_count.
-    CRITICAL: downloaded/completed = progress==`100` ONLY.
-    NEVER use status for downloaded. status=='downloading' = ACTIVELY in-progress."""
+    CRITICAL: downloaded/completed = progress == 100 ONLY.
+    NEVER use status for downloaded. status == 'downloading' = ACTIVELY in-progress."""
     torrents = get_client().get_torrents()
     items = [_torrent_to_model(t) for t in torrents]
     filtered = apply_query(items, filter_expr, search=search, sort_by=sort_by, limit=None)
