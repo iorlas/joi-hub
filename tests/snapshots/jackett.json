@@ -1,6 +1,6 @@
 [
   {
-    "name": "find_torrents",
+    "name": "search_torrents",
     "description": "Search torrents (TSV). Fields: title, size, seeders, leechers, indexer",
     "inputSchema": {
       "additionalProperties": false,

@@ -41,7 +41,7 @@ gateway = FastMCP(
     instructions=(
         "Reelm is your personal media agent. "
         "Use reelm_torrents tools to manage downloads, "
-        "reelm_search tools to find torrents, "
+        "reelm_jackett tools to search torrents, "
         "reelm_media tools to discover movies/TV, "
         "reelm_storage tools to manage files on the NAS. "
         "Use reelm_memory tools to store and recall shared household media context — "
@@ -56,7 +56,7 @@ gateway = FastMCP(
 
 # --- Mount backends with tool prefixing ---
 gateway.mount(create_proxy(TRANSMISSION_URL), namespace="reelm_torrents")
-gateway.mount(create_proxy(JACKETT_URL), namespace="reelm_search")
+gateway.mount(create_proxy(JACKETT_URL), namespace="reelm_jackett")
 gateway.mount(create_proxy(STORAGE_URL), namespace="reelm_storage")
 gateway.mount(create_proxy(TMDB_URL), namespace="reelm_media")
 gateway.mount(memory_mcp, namespace="reelm_memory")

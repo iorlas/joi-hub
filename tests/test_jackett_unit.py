@@ -11,8 +11,8 @@ from mcps.servers.jackett import (
     _extract_torznab_attrs,
     _make_id,
     _parse_torznab_response,
-    find_torrents,
     get_torrent,
+    search_torrents,
 )
 
 SAMPLE_XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -242,9 +242,9 @@ class TestGetTorrent:
         with pytest.raises(ValueError, match="Invalid torrent ID format"):
             get_torrent("nonexistent")
 
-    def test_raises_for_missing_cached_id_mentions_find_torrents(self):
+    def test_raises_for_missing_cached_id_mentions_search_torrents(self):
         _cache.clear()
-        with pytest.raises(ValueError, match="find_torrents"):
+        with pytest.raises(ValueError, match="search_torrents"):
             get_torrent("jkt_00000000")
 
 
@@ -276,7 +276,7 @@ class TestAltQueriesDedup:
             return _parse_torznab_response(SAMPLE_XML)  # same results
 
         monkeypatch.setattr("mcps.servers.jackett._search", fake_search)
-        result = find_torrents(query="Ubuntu", alt_queries=["Убунту"])
+        result = search_torrents(query="Ubuntu", alt_queries=["Убунту"])
         assert call_count == 2
         # Deduplicated: same GUID -> same ID -> kept once
         lines = result.data.strip().split("\n")
@@ -294,14 +294,14 @@ class TestAltQueriesDedup:
             return _parse_torznab_response(SECOND_ITEM_XML)
 
         monkeypatch.setattr("mcps.servers.jackett._search", fake_search)
-        result = find_torrents(query="Interstellar", alt_queries=["Интерстеллар"])
+        result = search_torrents(query="Interstellar", alt_queries=["Интерстеллар"])
         lines = result.data.strip().split("\n")
         assert len(lines) == 3  # header + 2 distinct rows
 
     def test_returns_tsv_format(self, monkeypatch):
         _cache.clear()
         monkeypatch.setattr("mcps.servers.jackett._search", lambda p: _parse_torznab_response(SAMPLE_XML))
-        result = find_torrents(query="Ubuntu")
+        result = search_torrents(query="Ubuntu")
         assert "\t" in result.data
         header = result.data.split("\n")[0]
         assert "title" in header

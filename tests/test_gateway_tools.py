@@ -12,7 +12,7 @@ from mcps.servers.transmission import mcp as transmission_mcp
 
 BACKENDS = {
     "reelm_torrents": transmission_mcp,
-    "reelm_search": jackett_mcp,
+    "reelm_jackett": jackett_mcp,
     "reelm_storage": storage_mcp,
     "reelm_media": tmdb_mcp,
     "reelm_memory": memory_mcp,
@@ -46,7 +46,7 @@ async def test_gateway_lists_all_tools(gateway):
 
     # Spot-check known tools exist
     assert "reelm_torrents_list_torrents" in tool_names
-    assert "reelm_search_find_torrents" in tool_names
+    assert "reelm_jackett_search_torrents" in tool_names
     assert "reelm_storage_list_dir" in tool_names
     assert "reelm_media_search_media" in tool_names
     assert "reelm_memory_remember" in tool_names
