@@ -1,5 +1,5 @@
 x-hub: &hub
-  image: ghcr.io/iorlas/reelm:${IMAGE_TAG}
+  image: ghcr.io/iorlas/joi-hub:${IMAGE_TAG}
   expose:
     - "8000"
   networks:
