@@ -121,14 +121,14 @@ services:
           "storage": {"workspace": "/app/data"},
           "vlm": {
             "provider": "openai",
-            "api_base": "http://litellm:4000/v1",
+            "api_base": "http://llm:4000/v1",
             "api_key": "no-auth",
             "model": "llama3.2:3b"
           },
           "embedding": {
             "dense": {
               "provider": "openai",
-              "api_base": "http://litellm:4000/v1",
+              "api_base": "http://llm:4000/v1",
               "api_key": "no-auth",
               "model": "nomic-embed-text",
               "dimension": 1536
