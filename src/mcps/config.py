@@ -33,6 +33,7 @@ class Settings(BaseSettings):
 
     # OpenViking (default localhost for local dev; overridden via OPENVIKING_URL env var in production)
     openviking_url: str = "http://localhost:1933"
+    openviking_api_key: str = ""
 
 
 settings = Settings()

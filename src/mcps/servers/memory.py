@@ -15,11 +15,12 @@ from mcps.config import settings
 mcp = FastMCP("Reelm Memory")
 
 _BASE_URL = settings.openviking_url
+_HEADERS: dict[str, str] = {"X-API-Key": settings.openviking_api_key} if settings.openviking_api_key else {}
 
 
 async def _post(path: str, json: dict) -> dict:
     """POST to OpenViking API."""
-    async with httpx.AsyncClient(base_url=_BASE_URL, timeout=30.0) as client:
+    async with httpx.AsyncClient(base_url=_BASE_URL, headers=_HEADERS, timeout=30.0) as client:
         resp = await client.post(path, json=json)
         resp.raise_for_status()
         return resp.json()
@@ -27,7 +28,7 @@ async def _post(path: str, json: dict) -> dict:
 
 async def _get(url: str) -> dict:
     """GET from OpenViking API."""
-    async with httpx.AsyncClient(base_url=_BASE_URL, timeout=30.0) as client:
+    async with httpx.AsyncClient(base_url=_BASE_URL, headers=_HEADERS, timeout=30.0) as client:
         resp = await client.get(url)
         resp.raise_for_status()
         return resp.json()

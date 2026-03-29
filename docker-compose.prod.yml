@@ -26,6 +26,7 @@ services:
       STORAGE_MCP_URL: http://hub-storage:8000/mcp/
       TMDB_MCP_URL: http://hub-tmdb:8000/mcp/
       OPENVIKING_URL: http://openviking:1933
+      OPENVIKING_API_KEY: hub-internal-only
     depends_on:
       hub-transmission:
         condition: service_healthy
@@ -116,7 +117,7 @@ services:
       - |
         cat > /app/ov.conf <<'CONF'
         {
-          "server": {"host": "0.0.0.0", "port": 1933},
+          "server": {"host": "0.0.0.0", "port": 1933, "root_api_key": "hub-internal-only"},
           "storage": {"workspace": "/app/data"},
           "vlm": {
             "provider": "openai",
