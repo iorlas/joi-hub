@@ -109,8 +109,7 @@ services:
 
   # ── OpenViking (household memory) ──
   openviking:
-    image: ghcr.io/volcengine/openviking:main
-    pull_policy: always
+    image: ghcr.io/volcengine/openviking:v0.2.13
     command:
       - sh
       - -c
