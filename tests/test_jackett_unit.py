@@ -357,6 +357,23 @@ class TestEnsureMagnet:
         assert result.magneturl is not None
         assert result.magneturl.startswith("magnet:?xt=urn:btih:")
 
+    def test_private_torrent_leaves_magneturl_none(self):
+        import bencodepy
+
+        detail = _make_detail()
+        info = {b"name": b"test", b"piece length": 262144, b"length": 1024, b"pieces": b"\x00" * 20, b"private": 1}
+        torrent_bytes = bencodepy.encode({b"info": info})
+
+        mock_resp = MagicMock()
+        mock_resp.url = httpx.URL("https://example.com/dl/123.torrent")
+        mock_resp.status_code = 200
+        mock_resp.content = torrent_bytes
+
+        with patch("mcps.servers.jackett.httpx.get", return_value=mock_resp):
+            result = _ensure_magnet(detail)
+
+        assert result.magneturl is None
+
     def test_network_failure_returns_unchanged(self):
         detail = _make_detail()
 

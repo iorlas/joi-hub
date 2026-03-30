@@ -212,8 +212,8 @@ def _ensure_magnet(detail: TorrentDetail) -> TorrentDetail:
 
     If magneturl is already set, return as-is. Otherwise, try to fetch the
     download link URL: if redirect leads to magnet: URL, use that; if response
-    is 200 with content, convert torrent bytes to magnet via torrent_bytes_to_magnet.
-    On any failure, return unchanged.
+    is a .torrent file, convert to magnet (unless private tracker — those must
+    use the download link directly). On any failure, return unchanged.
     """
     if detail.magneturl:
         return detail
@@ -242,7 +242,8 @@ def _ensure_magnet(detail: TorrentDetail) -> TorrentDetail:
 def get_torrent(
     torrent_id: Annotated[str, Field(description="Torrent ID (jkt_xxxxxxxx)")],
 ) -> TorrentDetail:
-    """Get torrent details by ID. Resolves magnet link if not already available."""
+    """Get torrent details by ID. Resolves magnet link if possible.
+    Private tracker torrents (LostFilm, RuTracker, etc.) won't have magneturl — use link (download URL) with add_torrent instead."""
     if not torrent_id.startswith(ID_PREFIX):
         raise ValueError(f"Invalid torrent ID format: {torrent_id}. Expected jkt_xxxxxxxx from search results.")
     if torrent_id not in _cache:

@@ -10,7 +10,7 @@
   },
   {
     "name": "list_torrents",
-    "description": "List torrents (TSV). No filter = all.\nFields: name, status, progress, eta, total_size, error_string, download_speed, file_count.\nCRITICAL: downloaded/completed = progress == 100 ONLY.\nNEVER use status for downloaded. status == 'downloading' = ACTIVELY in-progress.",
+    "description": "List torrents (TSV). No filter = all.\nFields: name, status, progress, eta, total_size, error_string, download_speed, file_count.\nCRITICAL: downloaded/completed = progress == 100 ONLY.\nNEVER use status for downloaded. status == 'downloading' = ACTIVELY in-progress.\nCheck error_string for tracker errors (auth failures, 'user not found', private tracker issues).",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -51,12 +51,12 @@
   },
   {
     "name": "add_torrent",
-    "description": "Add torrent by magnet link. ALWAYS use magneturl from get_torrent \u2014 it's more reliable than download URLs.\nIf download URL fails with 'expired', search again for fresh results.",
+    "description": "Add torrent. Use magneturl from get_torrent when available.\nFor private trackers (LostFilm, RuTracker \u2014 magneturl=null), use the link (download URL) \u2014 magnet breaks private tracker auth.\nIf download URL fails with 'expired', search again for fresh results.\nNOTE: tracker errors (auth, 'user not found') appear AFTER add. Check list_torrents after ~10s to verify error_string is empty.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
         "url": {
-          "description": "Magnet link (strongly preferred). Get magneturl from get_torrent. Fallback: download URL.",
+          "description": "Magnet link or download URL. Use magneturl from get_torrent when available. For private trackers (magneturl=null), use the link (download URL) \u2014 magnet won't work.",
           "type": "string"
         },
         "category": {

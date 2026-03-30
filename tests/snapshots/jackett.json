@@ -85,7 +85,7 @@
   },
   {
     "name": "get_torrent",
-    "description": "Get torrent details by ID. Resolves magnet link if not already available.",
+    "description": "Get torrent details by ID. Resolves magnet link if possible.\nPrivate tracker torrents (LostFilm, RuTracker, etc.) won't have magneturl \u2014 use link (download URL) with add_torrent instead.",
     "inputSchema": {
       "additionalProperties": false,
       "properties": {

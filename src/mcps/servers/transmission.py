@@ -223,7 +223,8 @@ def list_torrents(
     """List torrents (TSV). No filter = all.
     Fields: name, status, progress, eta, total_size, error_string, download_speed, file_count.
     CRITICAL: downloaded/completed = progress == 100 ONLY.
-    NEVER use status for downloaded. status == 'downloading' = ACTIVELY in-progress."""
+    NEVER use status for downloaded. status == 'downloading' = ACTIVELY in-progress.
+    Check error_string for tracker errors (auth failures, 'user not found', private tracker issues)."""
     torrents = get_client().get_torrents()
     items = [_torrent_to_model(t) for t in torrents]
     filtered = apply_query(items, filter_expr, search=search, sort_by=sort_by, limit=None)
@@ -236,15 +237,20 @@ def list_torrents(
 def add_torrent(
     url: Annotated[
         str,
-        Field(description="Magnet link (strongly preferred). Get magneturl from get_torrent. Fallback: download URL."),
+        Field(
+            description="Magnet link or download URL. Use magneturl from get_torrent when available."
+            " For private trackers (magneturl=null), use the link (download URL) — magnet won't work."
+        ),
     ],
     category: Annotated[
         str | None,
         Field(description="Download subdirectory: tv, movies, music, other. Default: root download dir."),
     ] = None,
 ) -> Torrent:
-    """Add torrent by magnet link. ALWAYS use magneturl from get_torrent — it's more reliable than download URLs.
-    If download URL fails with 'expired', search again for fresh results."""
+    """Add torrent. Use magneturl from get_torrent when available.
+    For private trackers (LostFilm, RuTracker — magneturl=null), use the link (download URL) — magnet breaks private tracker auth.
+    If download URL fails with 'expired', search again for fresh results.
+    NOTE: tracker errors (auth, 'user not found') appear AFTER add. Check list_torrents after ~10s to verify error_string is empty."""
     client = get_client()
     download_dir = None
     if category:

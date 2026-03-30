@@ -1,11 +1,13 @@
 import bencodepy
 import pytest
 
-from mcps.shared.torrent import torrent_bytes_to_magnet
+from mcps.shared.torrent import is_private_torrent, torrent_bytes_to_magnet
 
 
-def _make_torrent_bytes(name="test"):
+def _make_torrent_bytes(name="test", private=False):
     info = {b"name": name.encode(), b"piece length": 262144, b"length": 1024, b"pieces": b"\x00" * 20}
+    if private:
+        info[b"private"] = 1
     return bencodepy.encode({b"info": info})
 
 
@@ -48,3 +50,22 @@ class TestTorrentBytesToMagnet:
         result = torrent_bytes_to_magnet(data)
         assert "tr=" in result
         assert "tracker.example.com" in result
+
+    def test_raises_for_private_torrent(self):
+        data = _make_torrent_bytes("Private Show", private=True)
+        with pytest.raises(ValueError, match=r"private tracker"):
+            torrent_bytes_to_magnet(data)
+
+
+@pytest.mark.unit
+class TestIsPrivateTorrent:
+    def test_public_torrent(self):
+        data = _make_torrent_bytes("public")
+        assert is_private_torrent(data) is False
+
+    def test_private_torrent(self):
+        data = _make_torrent_bytes("private", private=True)
+        assert is_private_torrent(data) is True
+
+    def test_invalid_data(self):
+        assert is_private_torrent(b"not a torrent") is False
